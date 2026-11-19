@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#521d4f">
+    <title>Мои идеи — список</title>
+    <link rel="stylesheet" href="./список.css">
+</head>
+<body>
+    <main class="app">
+        <h1>Мои идеи</h1>
+        <p class="subtitle">Записывай идеи, чтобы ничего не забыть.</p>
+
+        <form id="itemForm" class="controls">
+            <label class="visually-hidden" for="itemInput">Новая идея</label>
+            <input id="itemInput" type="text" placeholder="Введите текст..." maxlength="200" autocomplete="off">
+            <button id="addBtn" type="submit">Добавить</button>
+        </form>
+
+        <p id="emptyMessage" class="empty-message">Пока список пуст. Добавь первую идею!</p>
+        <ul id="list" class="list" aria-live="polite"></ul>
+        <p id="counter" class="counter"></p>
+    </main>
+
+    <script>
+        const input = document.querySelector('#itemInput');
+        const form = document.querySelector('#itemForm');
+        const list = document.querySelector('#list');
+        const emptyMessage = document.querySelector('#emptyMessage');
+        const counter = document.querySelector('#counter');
+
+        let items = [];
+        try {
+            const savedItems = JSON.parse(localStorage.getItem('myItems') || '[]');
+            items = Array.isArray(savedItems)
+                ? savedItems.filter(item => typeof item === 'string')
+                : [];
+        } catch (error) {
+            items = [];
+        }
+
+        function saveItems() {
+            try {
+                localStorage.setItem('myItems', JSON.stringify(items));
+            } catch (error) {
+                alert('Не удалось сохранить список в этом браузере.');
+            }
+        }
+
+        function render() {
+            list.replaceChildren();
+
+            items.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = 'list-item';
+
+                const text = document.createElement('span');
+                text.className = 'item-text';
+                text.textContent = item;
+
+                const removeButton = document.createElement('button');
+                removeButton.className = 'delete-btn';
+                removeButton.type = 'button';
+                removeButton.textContent = 'Удалить';
+                removeButton.setAttribute('aria-label', 'Удалить: ' + item);
+                removeButton.addEventListener('click', () => {
+                    items.splice(index, 1);
+                    saveItems();
+                    render();
+                });
+
+                li.append(text, removeButton);
+                list.appendChild(li);
+            });
+
+            emptyMessage.hidden = items.length > 0;
+            counter.textContent = items.length
+                ? 'Всего идей: ' + items.length
+                : '';
+        }
+
+        form.addEventListener('submit', event => {
+            event.preventDefault();
+            const value = input.value.trim();
+
+            if (!value) {
+                input.focus();
+                return;
+            }
+
+            items.push(value);
+            saveItems();
+            render();
+            input.value = '';
+            input.focus();
+        });
+
+        render();
+    </script>
+</body>
+</html>
